@@ -22,8 +22,6 @@ jobs:
             out: doyo-linux-amd64
           - os: macos-14
             out: doyo-macos-arm64
-          - os: macos-13
-            out: doyo-macos-amd64
           - os: windows-latest
             out: doyo-windows-amd64.exe
     runs-on: ${{ matrix.os }}
