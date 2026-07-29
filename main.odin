@@ -6,7 +6,7 @@ package main
 // ## Changes
 // - 2026-07-28: Replace scaffold; wire arg-parse → doyo.run with usage + exit.
 
-import doyo "doyo"
+import doyo "src"
 import "core:fmt"
 import "core:os"
 

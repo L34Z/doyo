@@ -8,7 +8,7 @@ package bench
 // ## Changes
 // - 2026-07-28: Initial select+clean throughput benchmark.
 
-import doyo "../doyo"
+import doyo "../src"
 import "core:fmt"
 import "core:time"
 
