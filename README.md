@@ -163,3 +163,10 @@ pinned real repo, kept out of the deterministic suite.
 - `tar` at runtime to unpack the repo tarball. This may move in-process later.
 
 There are no bundled C libraries. The HTML tokenizer is hand-rolled and owned.
+
+## Contributing
+
+I made doyo for myself and don't plan to put much ongoing work into it. If you
+send a thoughtful pull request I'll read it and merge what fits. Bug reports and
+small fixes are welcome too. Open an issue or a PR and I'll get to it when I can.
+No templates, no formal process.
