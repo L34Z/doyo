@@ -113,12 +113,11 @@ fetch_many :: proc(urls: []string, jobs: int) -> []Fetch {
 // temp dir, then walks it. The codeload tarball wraps everything in a single
 // `<repo>-<ref>/` dir; that prefix is stripped so paths are repo-relative.
 download_and_unpack :: proc(url: string) -> (files: []File, ok: bool) {
-	dir, got := run_capture({"mktemp", "-d"})
-	if !got {
+	dir, terr := os.make_directory_temp("", "doyo-*", context.allocator)
+	if terr != nil {
 		return nil, false
 	}
-	dir = strings.trim_space(dir)
-	defer run_quiet({"rm", "-rf", dir})
+	defer os.remove_all(dir)
 
 	// Stream the tarball straight to disk with a live progress bar (curl writes
 	// the bar to the inherited stderr), so a big repo never sits in memory.
@@ -182,18 +181,4 @@ walk_dir :: proc(root, prefix: string, out: ^[dynamic]File) {
 		// skipped: non-regular entries carry no doc bytes
 		}
 	}
-}
-
-// Run a command and return its stdout as a string, or fail.
-run_capture :: proc(cmd: []string) -> (string, bool) {
-	state, stdout, _, err := os.process_exec({command = cmd}, context.allocator)
-	if err != nil || !state.success {
-		return "", false
-	}
-	return string(stdout), true
-}
-
-// Run a command purely for its side effect, discarding all output.
-run_quiet :: proc(cmd: []string) {
-	_, _, _, _ = os.process_exec({command = cmd}, context.allocator)
 }

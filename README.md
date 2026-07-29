@@ -6,12 +6,18 @@
 **doyo** (DOcumentation YOinker) is a small and relatively fast single binary tool
 to [yoink](https://dictionary.cambridge.org/us/dictionary/english/yoink) project documentation for LLM use.
 
-Supports github repositories and regular http URLs 
+Supports GitHub repositories and plain HTTP URLs.
 
 Written in [Odin](https://odin-lang.org/).
 
 Indexing and search are left to a separate tool such as graphify.
 
+
+## Download
+
+Grab a prebuilt binary for Linux, macOS, or Windows from the
+[Releases](https://github.com/L34Z/doyo/releases) tab. Each release is built
+natively on its own platform. To build from source instead, read on.
 
 ## Install
 
@@ -37,6 +43,10 @@ Then run it:
 build/doyo <owner/repo | github-url | arbitrary-url>
 ```
 
+This builds on Linux, macOS, and Windows. Odin links only for the host OS, so
+each platform's binary is built on that platform (see
+`.github/workflows/release.yml`, which does exactly this for every release).
+
 ## Usage
 
 ```
@@ -59,6 +69,17 @@ Output goes to `./<owner>-<repo>/` in repo mode or `./<host>/` in URL mode,
 mirroring the docs tree as files, plus a sorted `index.md` that lists
 everything. doyo refuses to overwrite an existing output directory unless you
 pass `--force`.
+
+## Use with an AI agent
+
+Download the binary for your platform, drop it in your project folder, and point
+your coding agent at it. Tell the agent something like:
+
+> Run ./doyo godotengine/godot-docs to pull the Godot docs into this project,
+> then read them before you start.
+
+doyo writes a local folder of clean Markdown, so the agent reads the real docs
+instead of guessing at an API from memory.
 
 ## How it works
 
@@ -161,6 +182,10 @@ pinned real repo, kept out of the deterministic suite.
 - `curl` at runtime for HTTPS, redirects, and compression. This moves to native
   TLS at Odin 1.0.
 - `tar` at runtime to unpack the repo tarball. This may move in-process later.
+
+Both ship with modern macOS and Windows 10+, so doyo runs on all three
+platforms with no extra setup. Temp directories are handled in-process, so there
+is no dependency on Unix `mktemp` or `rm`.
 
 There are no bundled C libraries. The HTML tokenizer is hand-rolled and owned.
 
