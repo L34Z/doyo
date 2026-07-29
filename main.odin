@@ -18,6 +18,12 @@ USAGE :: `doyo <owner/repo | github-url | arbitrary-url>
 `
 
 main :: proc() {
+	for a in os.args[1:] {
+		if a == "-h" || a == "--help" {
+			fmt.print(USAGE)
+			os.exit(0)
+		}
+	}
 	opt, err := doyo.parse_args(os.args[1:])
 	if err != "" {
 		fmt.eprintf("doyo: %s\n\n%s", err, USAGE)
