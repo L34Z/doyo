@@ -3,10 +3,11 @@
 > [!NOTE]
 > This project was made for my personal use and enjoyment. AI was used.
 
-**doyo** (DOcumentation YOinker) is a small, fast tool that pulls a project's
-documentation and writes it to a local tree of clean text files for an LLM to
-read. It does that one job and nothing else. Indexing and search are left to a
-separate tool such as graphify.
+**doyo** (DOcumentation YOinker) pulls a project's documentation and writes it
+to a local tree of clean text files for an LLM to read. It is one small, fast
+binary written in Odin, and it takes either a GitHub repo or a bare URL. It does
+that one job and nothing else; indexing and search are left to a separate tool
+such as graphify.
 
 The idea, borrowed from git-mcp, is that the authored source in a project's git
 repo is a better target than its rendered website. There is no Cloudflare, no
