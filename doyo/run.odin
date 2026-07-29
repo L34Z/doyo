@@ -27,14 +27,11 @@ run_repo :: proc(t: Target, opt: Options) -> string {
 	url := fmt.aprintf("https://codeload.github.com/%s/%s/tar.gz/HEAD", t.owner, t.repo)
 	fmt.eprintf("doyo: fetching %s/%s …\n", t.owner, t.repo)
 
-	f := fetch_bytes(url)
-	if !f.ok {
-		return strings.concatenate({"failed to fetch repo tarball: ", url})
-	}
-	files, ok := unpack_tarball(f.data)
+	files, ok := download_and_unpack(url)
 	if !ok {
-		return "failed to unpack repo tarball (is `tar` installed?)"
+		return strings.concatenate({"failed to fetch or unpack repo tarball: ", url})
 	}
+	fmt.eprintf("doyo: unpacked %d files, selecting docs …\n", len(files))
 
 	sel := select_docs(files, opt.path)
 	if len(sel) == 0 {

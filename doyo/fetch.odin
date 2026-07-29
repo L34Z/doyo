@@ -32,6 +32,22 @@ fetch_bytes :: proc(url: string) -> Fetch {
 	return {data = stdout, ok = true}
 }
 
+// Download a URL to `dest`, showing curl's own progress bar. stderr is
+// inherited (the bar renders live on the terminal); stdout is unused since
+// curl writes the body straight to the file with -o. Used for the one big
+// repo-tarball fetch, where progress matters (DESIGN §6 is about many small
+// fetches, not this one).
+fetch_to_file :: proc(url, dest: string) -> bool {
+	p, err := os.process_start(
+		{command = {"curl", "-L", "--fail", "--progress-bar", "-o", dest, url}, stderr = os.stderr},
+	)
+	if err != nil {
+		return false
+	}
+	state, werr := os.process_wait(p)
+	return werr == nil && state.success && state.exit_code == 0
+}
+
 // Fetch with a content-negotiation header, e.g. Accept: text/markdown so a site
 // can serve its own machine-readable form (DESIGN §4 rung 2).
 fetch_with_accept :: proc(url, accept: string) -> Fetch {
@@ -96,7 +112,7 @@ fetch_many :: proc(urls: []string, jobs: int) -> []Fetch {
 // Unpack a gzip tarball into a flat []File. Shells to `tar` (DESIGN §3) via a
 // temp dir, then walks it. The codeload tarball wraps everything in a single
 // `<repo>-<ref>/` dir; that prefix is stripped so paths are repo-relative.
-unpack_tarball :: proc(targz: []u8) -> (files: []File, ok: bool) {
+download_and_unpack :: proc(url: string) -> (files: []File, ok: bool) {
 	dir, got := run_capture({"mktemp", "-d"})
 	if !got {
 		return nil, false
@@ -104,12 +120,17 @@ unpack_tarball :: proc(targz: []u8) -> (files: []File, ok: bool) {
 	dir = strings.trim_space(dir)
 	defer run_quiet({"rm", "-rf", dir})
 
+	// Stream the tarball straight to disk with a live progress bar (curl writes
+	// the bar to the inherited stderr), so a big repo never sits in memory.
+	tarpath := strings.concatenate({dir, "/repo.tar.gz"})
+	if !fetch_to_file(url, tarpath) {
+		return nil, false
+	}
+
 	// Extract into a dedicated subdir so the tarball file doesn't sit beside the
 	// wrapper dir (which would defeat single_subdir's one-entry check).
-	tarpath := strings.concatenate({dir, "/repo.tar.gz"})
 	xdir := strings.concatenate({dir, "/x"})
-	if os.make_directory(xdir) != nil ||
-	   os.write_entire_file_from_bytes(tarpath, targz) != nil {
+	if os.make_directory(xdir) != nil {
 		return nil, false
 	}
 	state, _, _, err := os.process_exec(
