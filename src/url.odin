@@ -12,20 +12,29 @@ import "core:fmt"
 import "core:strings"
 
 run_url :: proc(t: Target, opt: Options) -> string {
-	root := url_root(t.url)
 	out := opt.out != "" ? opt.out : strings.concatenate({"./", url_host(t.url)})
 
-	// Rung 1: an llms manifest at the host root is authoritative Markdown.
-	// llms-full.txt is self-contained; llms.txt lists links we follow.
-	if full := fetch_bytes(strings.concatenate({root, "/llms-full.txt"})); full.ok &&
-	   !is_probably_html(string(full.data)) {
-		fmt.eprintln("doyo: found llms-full.txt (authoritative)")
-		return write_output(out, {{path = "llms-full.txt", data = full.data}}, opt.force)
-	}
-	if man := fetch_bytes(strings.concatenate({root, "/llms.txt"})); man.ok &&
-	   !is_probably_html(string(man.data)) {
-		fmt.eprintln("doyo: found llms.txt manifest, following links")
-		return write_llms_manifest(out, man.data, root, opt)
+	// Rung 1: the nearest llms manifest, walking up the URL path from the target
+	// page down to the host root. A page-specific manifest (e.g. one project's
+	// own docs section) wins over the site-wide one, so a link into a big multi-
+	// product site pulls only that product's docs. llms-full.txt is self-
+	// contained; llms.txt lists links we follow.
+	for base in url_bases(t.url) {
+		if full := fetch_bytes(strings.concatenate({base, "/llms-full.txt"})); full.ok &&
+		   !is_probably_html(string(full.data)) {
+			fmt.eprintfln("doyo: found llms-full.txt at %s (authoritative)", base)
+			return write_output(out, {{path = "llms-full.txt", data = full.data}}, opt.force)
+		}
+		if man := fetch_bytes(strings.concatenate({base, "/llms.txt"})); man.ok &&
+		   !is_probably_html(string(man.data)) {
+			section := section_prefix(base, t.url)
+			if section != "" {
+				fmt.eprintfln("doyo: found llms.txt manifest at %s, following links under %s", base, section)
+			} else {
+				fmt.eprintfln("doyo: found llms.txt manifest at %s, following links", base)
+			}
+			return write_llms_manifest(out, man.data, section, opt)
+		}
 	}
 
 	// Rung 2: the page's own Markdown form (`.md`, or an Accept negotiation).
@@ -51,20 +60,58 @@ run_url :: proc(t: Target, opt: Options) -> string {
 	return write_output(out, {{path = url_to_filename(t.url), data = transmute([]u8)notice}}, opt.force)
 }
 
-// Follow an llms.txt manifest: fetch every linked page concurrently
-// and write each, plus the manifest itself.
-write_llms_manifest :: proc(out: string, manifest: []u8, root: string, opt: Options) -> string {
+// Follow an llms.txt manifest: fetch every linked page concurrently and write
+// each, plus the manifest itself. When `section` is non-empty, only links under
+// that path prefix are followed, so a broad site manifest reached from a deep
+// page pulls just that page's section, not sibling products.
+write_llms_manifest :: proc(out: string, manifest: []u8, section: string, opt: Options) -> string {
 	links := extract_links(string(manifest))
-	fetched := fetch_many(links, opt.jobs)
+	kept := make([dynamic]string, 0, len(links))
+	for l in links {
+		if section == "" || strings.has_prefix(l, section) {
+			append(&kept, l)
+		}
+	}
 
-	files := make([dynamic]File, 0, len(links) + 1)
+	fetched := fetch_many(kept[:], opt.jobs)
+	files := make([dynamic]File, 0, len(kept) + 1)
 	append(&files, File{path = "llms.txt", data = manifest})
 	for f, i in fetched {
 		if f.ok {
-			append(&files, File{path = url_to_filename(links[i]), data = f.data})
+			append(&files, File{path = url_to_filename(kept[i]), data = f.data})
 		}
 	}
 	return write_output(out, files[:], opt.force)
+}
+
+// The section prefix to filter a manifest's links by: the base where the
+// manifest was found, plus the target's next path segment. A manifest at
+// scheme://host/docs reached from a /docs/nakama/... target yields
+// "scheme://host/docs/nakama/", narrowing the follow to that one section.
+// Returns "" when the target adds no segment past the base — nothing to narrow
+// to, so every link is followed.
+section_prefix :: proc(base, target: string) -> string {
+	clean := target
+	for cut in ([]string{"?", "#"}) {
+		if i := strings.index(clean, cut); i >= 0 {
+			clean = clean[:i]
+		}
+	}
+	clean = strings.trim_suffix(clean, "/")
+
+	prefix := strings.concatenate({base, "/"})
+	if !strings.has_prefix(clean, prefix) {
+		return ""
+	}
+	rest := clean[len(prefix):]
+	seg := rest
+	if slash := strings.index_byte(rest, '/'); slash >= 0 {
+		seg = rest[:slash]
+	}
+	if seg == "" {
+		return ""
+	}
+	return strings.concatenate({base, "/", seg, "/"})
 }
 
 // Try the page's machine-readable Markdown: a `.md` sibling, then an
@@ -87,6 +134,33 @@ fetch_page_markdown :: proc(url: string) -> ([]u8, bool) {
 is_probably_html :: proc(s: string) -> bool {
 	t := strings.trim_space(s)
 	return len(t) > 0 && t[0] == '<'
+}
+
+// The ladder of base URLs to probe for an llms manifest, deepest first: the
+// target page's own path, then each parent segment, ending at the host root.
+// Each base has no trailing slash, so callers append "/llms.txt". Deepest-first
+// order means the most specific manifest wins. Query/fragment are dropped.
+url_bases :: proc(url: string) -> []string {
+	root := url_root(url)
+	clean := url
+	for cut in ([]string{"?", "#"}) {
+		if i := strings.index(clean, cut); i >= 0 {
+			clean = clean[:i]
+		}
+	}
+	clean = strings.trim_suffix(clean, "/")
+
+	out := make([dynamic]string, 0, 8)
+	for len(clean) > len(root) {
+		append(&out, clean)
+		slash := strings.last_index_byte(clean, '/')
+		if slash < len(root) {
+			break
+		}
+		clean = clean[:slash]
+	}
+	append(&out, root)
+	return out[:]
 }
 
 // scheme://host of a URL (its root), for locating llms.txt.
