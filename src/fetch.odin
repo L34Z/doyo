@@ -1,6 +1,6 @@
 package doyo
 
-// Network + unpack layer (DESIGN §3, §6, §10). This is the impure boundary:
+// Network + unpack layer. This is the impure boundary:
 // it shells to `curl` (HTTPS/TLS/redirects) and `tar` (unpack), touches temp
 // files, and is deliberately kept out of the deterministic test suite. Fetch
 // completion order is nondeterministic; the pure transform downstream is not.
@@ -35,8 +35,8 @@ fetch_bytes :: proc(url: string) -> Fetch {
 // Download a URL to `dest`, showing curl's own progress bar. stderr is
 // inherited (the bar renders live on the terminal); stdout is unused since
 // curl writes the body straight to the file with -o. Used for the one big
-// repo-tarball fetch, where progress matters (DESIGN §6 is about many small
-// fetches, not this one).
+// repo-tarball fetch, where progress matters, unlike the many small fetches
+// downstream that run silently.
 fetch_to_file :: proc(url, dest: string) -> bool {
 	p, err := os.process_start(
 		{command = {"curl", "-L", "--fail", "--progress-bar", "-o", dest, url}, stderr = os.stderr},
@@ -49,7 +49,7 @@ fetch_to_file :: proc(url, dest: string) -> bool {
 }
 
 // Fetch with a content-negotiation header, e.g. Accept: text/markdown so a site
-// can serve its own machine-readable form (DESIGN §4 rung 2).
+// can serve its own machine-readable form.
 fetch_with_accept :: proc(url, accept: string) -> Fetch {
 	header := strings.concatenate({"Accept: ", accept})
 	state, stdout, _, err := os.process_exec(
@@ -63,7 +63,7 @@ fetch_with_accept :: proc(url, accept: string) -> Fetch {
 }
 
 // Shared work-list for the fetch pool: workers pull indices atomically and fill
-// their own result slot, so no two threads write the same memory (DESIGN §6).
+// their own result slot, so no two threads write the same memory.
 Fetch_Work :: struct {
 	urls:    []string,
 	results: []Fetch,
@@ -109,7 +109,7 @@ fetch_many :: proc(urls: []string, jobs: int) -> []Fetch {
 	return work.results
 }
 
-// Unpack a gzip tarball into a flat []File. Shells to `tar` (DESIGN §3) via a
+// Unpack a gzip tarball into a flat []File. Shells to `tar` via a
 // temp dir, then walks it. The codeload tarball wraps everything in a single
 // `<repo>-<ref>/` dir; that prefix is stripped so paths are repo-relative.
 download_and_unpack :: proc(url: string) -> (files: []File, ok: bool) {

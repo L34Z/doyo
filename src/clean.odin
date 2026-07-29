@@ -1,6 +1,6 @@
 package doyo
 
-// Light normalization (DESIGN §5): deterministic, line-level, no format parser.
+// Light normalization: deterministic, line-level, no format parser.
 // Strips only provably-contentless rST noise (comments, toctree) and collapses
 // image directives to their alt text. Prose, code blocks and inline roles are
 // left byte-for-byte raw — rewriting them is where a wrong converter creeps in.
@@ -11,7 +11,7 @@ package doyo
 import "core:strings"
 
 // Normalize one file by extension. Unknown extensions pass through untouched —
-// doyo defaults to leaving content rather than risking dropping it (DESIGN §4).
+// doyo defaults to leaving content rather than risking dropping it.
 clean :: proc(path: string, data: []u8) -> []u8 {
 	lower := strings.to_lower(path)
 	switch {
@@ -108,7 +108,7 @@ directive_name :: proc(after: string) -> string {
 
 // Docutils directives whose sole job is to attach a CSS class to the next
 // element (or body). Their argument is a class name, never prose — so the marker
-// line is provably contentless and safe to drop for any rST source (DESIGN §5).
+// line is provably contentless and safe to drop for any rST source.
 STYLE_DIRECTIVES := []string{"rst-class", "class", "cssclass"}
 
 is_style_directive :: proc(name: string) -> bool {

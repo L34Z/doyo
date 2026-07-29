@@ -4,7 +4,7 @@ import "core:testing"
 
 // End-to-end golden over the generated fixture: selection keeps exactly the
 // docs/ rST pages (source + png dropped), and each cleaned page matches its
-// computed oracle byte-for-byte (GUIDELINES §6 invariant + golden).
+// computed oracle byte-for-byte.
 @(test)
 fixture_pipeline_matches_oracle :: proc(t: ^testing.T) {
 	repo := gen_repo(5)

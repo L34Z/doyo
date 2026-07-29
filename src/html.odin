@@ -1,6 +1,6 @@
 package doyo
 
-// URL-mode rung 3 (DESIGN §4): a hand-rolled, owned HTML→Markdown tokenizer.
+// URL-mode rung 3: a hand-rolled, owned HTML→Markdown tokenizer.
 // Conservative by policy — it drops only known-boilerplate containers
 // (nav/header/footer/aside/script/style) and strips remaining tags, keeping all
 // other text. It defaults to leaving cruft rather than risking real content.
@@ -18,7 +18,7 @@ BLOCK_TAGS := []string{"p", "div", "br", "li", "tr", "h1", "h2", "h3", "h4", "h5
 
 // Convert HTML to lightly-cleaned Markdown-ish text. `spa` is true when the
 // result is effectively empty — the fetched HTML was a JS shell, which no
-// parser can help (DESIGN §4); the caller fails loud on it.
+// parser can help; the caller fails loud on it.
 html_to_markdown :: proc(data: []u8) -> (md: string, spa: bool) {
 	s := string(data)
 	b := strings.builder_make(0, len(s))

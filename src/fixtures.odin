@@ -1,6 +1,6 @@
 package doyo
 
-// Fixtures are code (GUIDELINES §6): gen_repo emits a synthetic repo tree with
+// Fixtures are code: gen_repo emits a synthetic repo tree with
 // known ground truth — a docs/ folder of rST pages carrying every construct the
 // cleaner touches (comment, image, prose) plus source/binary noise that must be
 // dropped. Used by golden tests and by the benchmark, scaled by page count. No

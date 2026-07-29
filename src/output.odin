@@ -1,6 +1,6 @@
 package doyo
 
-// Output layer (DESIGN §7): mirror the selected docs to a directory tree plus a
+// Output layer: mirror the selected docs to a directory tree plus a
 // sorted index.md. Non-destructive — refuse to overwrite an existing output dir
 // without --force. The index is sorted once, so on-disk output is byte-identical
 // run to run for the same fetched bytes.
@@ -47,7 +47,7 @@ reserve_index :: proc(path: string) -> string {
 	return path == "index.md" ? "index_.md" : path
 }
 
-// A sorted Markdown manifest of every written file (DESIGN §7). Sorting makes
+// A sorted Markdown manifest of every written file. Sorting makes
 // the manifest independent of fetch/arrival order.
 build_index :: proc(files: []File) -> string {
 	paths := make([]string, len(files))

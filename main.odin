@@ -1,7 +1,7 @@
 package main
 
-// doyo — DOcumentation YOinker (DESIGN.md). Thin CLI shell: parse args, run,
-// fail loud with a single non-zero exit on any error (GUIDELINES §5).
+// doyo — DOcumentation YOinker. Thin CLI shell: parse args, run,
+// fail loud with a single non-zero exit on any error.
 //
 // ## Changes
 // - 2026-07-28: Replace scaffold; wire arg-parse → doyo.run with usage + exit.

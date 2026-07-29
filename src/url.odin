@@ -1,6 +1,6 @@
 package doyo
 
-// URL mode: the fallback ladder (DESIGN §4). Resolve in order, stop at the first
+// URL mode: the fallback ladder. Resolve in order, stop at the first
 // rung that succeeds: (1) an llms.txt/llms-full.txt manifest, (2) the page's own
 // machine-readable Markdown, (3) a heuristic HTML→Markdown extraction flagged
 // "verify". Fails loud on JS-SPAs (empty HTML shell).
@@ -16,7 +16,7 @@ run_url :: proc(t: Target, opt: Options) -> string {
 	out := opt.out != "" ? opt.out : strings.concatenate({"./", url_host(t.url)})
 
 	// Rung 1: an llms manifest at the host root is authoritative Markdown.
-	// llms-full.txt is self-contained; llms.txt lists links we follow (§4.1).
+	// llms-full.txt is self-contained; llms.txt lists links we follow.
 	if full := fetch_bytes(strings.concatenate({root, "/llms-full.txt"})); full.ok &&
 	   !is_probably_html(string(full.data)) {
 		fmt.eprintln("doyo: found llms-full.txt (authoritative)")
@@ -43,7 +43,7 @@ run_url :: proc(t: Target, opt: Options) -> string {
 	if spa {
 		return strings.concatenate(
 			{"page appears to be a JS-rendered SPA (empty HTML shell): ", t.url,
-			 "\n  doyo cannot render it — out of scope (DESIGN §8)"},
+			 "\n  doyo cannot render it — out of scope"},
 		)
 	}
 	notice := strings.concatenate({"<!-- extracted from HTML (heuristic) — verify -->\n\n", md})
@@ -51,7 +51,7 @@ run_url :: proc(t: Target, opt: Options) -> string {
 	return write_output(out, {{path = url_to_filename(t.url), data = transmute([]u8)notice}}, opt.force)
 }
 
-// Follow an llms.txt manifest: fetch every linked page concurrently (§6 pool)
+// Follow an llms.txt manifest: fetch every linked page concurrently
 // and write each, plus the manifest itself.
 write_llms_manifest :: proc(out: string, manifest: []u8, root: string, opt: Options) -> string {
 	links := extract_links(string(manifest))

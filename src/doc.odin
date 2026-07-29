@@ -5,7 +5,7 @@ package doyo
 // The whole domain is a flat list of files. A repo (or fetched URL tree) is a
 // `[]File`: dense, index-addressable, copied only at explicit boundaries. Every
 // pure function here is a straight-line pass over that slice — no object graph,
-// no hidden state (GUIDELINES §1).
+// no hidden state.
 //
 // ## Changes
 // - 2026-07-28: Initial pure core: File, doc-extension classification.
@@ -19,7 +19,7 @@ File :: struct {
 	data: []u8,
 }
 
-// Served documentation formats (DESIGN §8: Markdown and reStructuredText). Plain
+// Served documentation formats (Markdown and reStructuredText). Plain
 // .txt is deliberately excluded — it is not a served format, and blanket-grabbing
 // it pulls in logs and license dumps. llms.txt manifests are matched by name.
 DOC_EXTS := []string{".md", ".markdown", ".rst"}

@@ -1,6 +1,6 @@
 package doyo
 
-// Orchestration (DESIGN §3, §7): classify the target, run the matching mode, and
+// Orchestration: classify the target, run the matching mode, and
 // write output. Returns an error string ("" on success) so the CLI can fail loud
 // with a single exit point.
 //

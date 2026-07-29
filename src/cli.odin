@@ -1,6 +1,6 @@
 package doyo
 
-// CLI surface (DESIGN §9): parse args into Options and classify the target as
+// CLI surface: parse args into Options and classify the target as
 // GitHub-repo mode or arbitrary-URL mode. Pure string work — unit-tested.
 //
 // ## Changes
@@ -24,7 +24,7 @@ Target :: struct {
 }
 
 // Parse argv (excluding program name). Returns Options and an error string
-// ("" on success). Fails loud on unknown flags or missing values (GUIDELINES §5).
+// ("" on success). Fails loud on unknown flags or missing values.
 parse_args :: proc(args: []string) -> (Options, string) {
 	opt := Options {
 		jobs = 8,

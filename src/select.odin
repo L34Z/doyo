@@ -1,7 +1,7 @@
 package doyo
 
 // Doc selection: given the full fetched tree, return only the files doyo should
-// serve, in DESIGN §3 priority order. Pure — a filter over the input slice, in
+// serve, in priority order. Pure — a filter over the input slice, in
 // one linear pass per rung; the result borrows the input Files (no copy).
 //
 // ## Changes
@@ -9,12 +9,12 @@ package doyo
 
 import "core:strings"
 
-// Root-relative doc folders, highest priority first (DESIGN §3.2).
+// Root-relative doc folders, highest priority first.
 DOC_DIRS := []string{"docs/", "doc/", "documentation/"}
 
-// Vendored/tooling directories that are never authored docs (DESIGN §3:
-// "everything else … is dropped"). Excluded from auto-detection, but NOT from an
-// explicit --path override — there the user has chosen the tree deliberately.
+// Vendored/tooling directories that are never authored docs. Excluded from
+// auto-detection, but NOT from an explicit --path override — there the user has
+// chosen the tree deliberately.
 NOISE_DIRS := []string{"thirdparty", "third_party", "vendor", "node_modules"}
 
 // A path is noise when any segment is a vendored dir, or an internal dir marked
@@ -59,7 +59,7 @@ select_docs :: proc(files: []File, path_override := "") -> []File {
 		return out[:]
 	}
 
-	// Rung 1: an llms manifest at root is authoritative on its own (DESIGN §3.1).
+	// Rung 1: an llms manifest at root is authoritative on its own.
 	// llms-full.txt is self-contained; llms.txt is the manifest to follow.
 	for name in ([]string{"llms-full.txt", "llms.txt"}) {
 		for f in files {

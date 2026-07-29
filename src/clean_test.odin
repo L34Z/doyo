@@ -2,7 +2,7 @@ package doyo
 
 import "core:testing"
 
-// Golden helper: clean(path, in) must equal `want`, byte-for-byte (GUIDELINES §6).
+// Golden helper: clean(path, in) must equal `want`, byte-for-byte.
 golden :: proc(t: ^testing.T, path, in_, want: string, loc := #caller_location) {
 	got := string(clean(path, transmute([]u8)in_))
 	testing.expectf(t, got == want, "clean(%q)\n--- got ---\n%s\n--- want ---\n%s", path, got, want)

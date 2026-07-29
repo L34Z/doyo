@@ -1,6 +1,6 @@
 package bench
 
-// Benchmark harness (GUIDELINES §6, DESIGN §11): one command, generated
+// Benchmark harness: one command, generated
 // reference material, a number in the repo. Runs the whole pure transform
 // (select → clean) over a synthetic docs tree and reports throughput. No
 // network, so the number is repeatable run to run.
