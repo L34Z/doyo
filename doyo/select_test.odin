@@ -55,6 +55,23 @@ fallback_excludes_vendored_and_dot_dirs :: proc(t: ^testing.T) {
 }
 
 @(test)
+fallback_excludes_underscore_tooling_dirs :: proc(t: ^testing.T) {
+	// Leading-underscore dirs are tooling/internal by convention (Sphinx _static,
+	// godot _tools/_styleguides). Dropped in auto-detection, like dot-dirs.
+	files := tree("README.md", "guide.md", "_tools/redirects/README.md", "_styleguides/de.md")
+	got := selected_paths(select_docs(files))
+	testing.expect(t, slice.equal(got, []string{"README.md", "guide.md"}), "no _tooling dirs")
+}
+
+@(test)
+path_override_keeps_underscore_dir :: proc(t: ^testing.T) {
+	// SAFETY: an explicit --path is always honored, even into an underscore dir.
+	files := tree("_internal/real.md", "_internal/more.rst", "other.md")
+	got := selected_paths(select_docs(files, "_internal"))
+	testing.expect(t, slice.equal(got, []string{"_internal/more.rst", "_internal/real.md"}), "override honors _dir")
+}
+
+@(test)
 docs_folder_excludes_vendored :: proc(t: ^testing.T) {
 	files := tree("docs/intro.rst", "docs/thirdparty/vendor/README.md", "docs/guide.md")
 	got := selected_paths(select_docs(files))

@@ -51,6 +51,22 @@ rst_directive_and_target_untouched :: proc(t: ^testing.T) {
 }
 
 @(test)
+rst_strips_bodyless_style_directive :: proc(t: ^testing.T) {
+	// `.. rst-class::` is a docutils class-setter: a CSS tag, no prose. In godot
+	// it is bodyless; only the marker line is dropped, the heading stays.
+	in_ := ".. rst-class:: classref-group\n\nDescription\n-----------\n"
+	golden(t, "a.rst", in_, "\nDescription\n-----------\n")
+}
+
+@(test)
+rst_style_directive_keeps_its_body :: proc(t: ^testing.T) {
+	// SAFETY: a class-setter WITH a styled body (other projects do this) must
+	// keep the body — we only ever drop the styling tag, never content.
+	in_ := ".. class:: special\n\n   This paragraph is styled.\n"
+	golden(t, "a.rst", in_, "\n   This paragraph is styled.\n")
+}
+
+@(test)
 txt_passthrough :: proc(t: ^testing.T) {
 	src := "plain text\nno rules apply\n"
 	golden(t, "notes.txt", src, src)

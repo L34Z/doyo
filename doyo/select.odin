@@ -17,13 +17,14 @@ DOC_DIRS := []string{"docs/", "doc/", "documentation/"}
 // explicit --path override — there the user has chosen the tree deliberately.
 NOISE_DIRS := []string{"thirdparty", "third_party", "vendor", "node_modules"}
 
-// A path is noise when any segment is a vendored dir or a dot-dir (.github, .git).
+// A path is noise when any segment is a vendored dir, or an internal dir marked
+// by a leading dot (.github, .git) or underscore (Sphinx _static, godot _tools).
 is_noise_path :: proc(path: string) -> bool {
 	for seg in strings.split(path, "/") {
 		if seg == "" {
 			continue
 		}
-		if seg[0] == '.' {
+		if seg[0] == '.' || seg[0] == '_' {
 			return true
 		}
 		for n in NOISE_DIRS {

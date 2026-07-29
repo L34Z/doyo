@@ -73,6 +73,12 @@ clean_rst :: proc(data: []u8) -> []u8 {
 			case name == "image", name == "figure":
 				i = take_image(lines[:], i, indent, &out)
 				continue
+			case is_style_directive(name):
+				// Class-setter (rst-class/class/cssclass): a CSS tag, not content.
+				// Drop only this marker line; any indented body is left untouched,
+				// so prose is never lost — safe for docs that style a body block.
+				i += 1
+				continue
 			case is_rst_comment(after):
 				i = skip_block(lines[:], i, indent)
 				continue
@@ -98,6 +104,18 @@ directive_name :: proc(after: string) -> string {
 	}
 	name := after[:idx]
 	return strings.index_byte(name, ' ') < 0 ? name : ""
+}
+
+// Docutils directives whose sole job is to attach a CSS class to the next
+// element (or body). Their argument is a class name, never prose — so the marker
+// line is provably contentless and safe to drop for any rST source (DESIGN §5).
+STYLE_DIRECTIVES := []string{"rst-class", "class", "cssclass"}
+
+is_style_directive :: proc(name: string) -> bool {
+	for d in STYLE_DIRECTIVES {
+		if d == name {return true}
+	}
+	return false
 }
 
 // A comment is a `..` block that is neither a directive (`::`), a hyperlink
