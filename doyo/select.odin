@@ -12,6 +12,34 @@ import "core:strings"
 // Root-relative doc folders, highest priority first (DESIGN §3.2).
 DOC_DIRS := []string{"docs/", "doc/", "documentation/"}
 
+// Vendored/tooling directories that are never authored docs (DESIGN §3:
+// "everything else … is dropped"). Excluded from auto-detection, but NOT from an
+// explicit --path override — there the user has chosen the tree deliberately.
+NOISE_DIRS := []string{"thirdparty", "third_party", "vendor", "node_modules"}
+
+// A path is noise when any segment is a vendored dir or a dot-dir (.github, .git).
+is_noise_path :: proc(path: string) -> bool {
+	for seg in strings.split(path, "/") {
+		if seg == "" {
+			continue
+		}
+		if seg[0] == '.' {
+			return true
+		}
+		for n in NOISE_DIRS {
+			if seg == n {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Auto-detection keeps only real doc files that aren't in vendored/dot dirs.
+is_wanted :: proc(path: string) -> bool {
+	return is_doc_file(path) && !is_noise_path(path)
+}
+
 // Select the files to serve. Priority: --path override, then an llms manifest at
 // root, then a docs/ folder, else every doc file in the tree. Binary/source
 // files are always dropped; only `is_doc_file` paths survive.
@@ -45,7 +73,7 @@ select_docs :: proc(files: []File, path_override := "") -> []File {
 	for dir in DOC_DIRS {
 		found := false
 		for f in files {
-			if strings.has_prefix(f.path, dir) && is_doc_file(f.path) {
+			if strings.has_prefix(f.path, dir) && is_wanted(f.path) {
 				append(&out, f)
 				found = true
 			}
@@ -57,7 +85,7 @@ select_docs :: proc(files: []File, path_override := "") -> []File {
 
 	// Rung 3: no manifest, no docs folder — every doc file in the tree.
 	for f in files {
-		if is_doc_file(f.path) {
+		if is_wanted(f.path) {
 			append(&out, f)
 		}
 	}

@@ -38,10 +38,27 @@ docs_folder_takes_only_doc_files :: proc(t: ^testing.T) {
 }
 
 @(test)
-fallback_takes_all_docs_plus_readme :: proc(t: ^testing.T) {
+fallback_takes_md_rst_and_readme_only :: proc(t: ^testing.T) {
+	// DESIGN §3.3: fallback is *.md / *.rst + README. Plain .txt is not a served
+	// format (DESIGN §8), so notes.txt is dropped along with source/binaries.
 	files := tree("guide.md", "api.rst", "notes.txt", "README", "src/main.go", "logo.png")
 	got := selected_paths(select_docs(files))
-	testing.expect(t, slice.equal(got, []string{"README", "api.rst", "guide.md", "notes.txt"}), "all doc files + README, no src/binary")
+	testing.expect(t, slice.equal(got, []string{"README", "api.rst", "guide.md"}), "md+rst+README only, no txt/src/binary")
+}
+
+@(test)
+fallback_excludes_vendored_and_dot_dirs :: proc(t: ^testing.T) {
+	// Vendored trees and dot-dirs are noise (DESIGN §3: "everything else … dropped").
+	files := tree("README.md", "guide.md", "thirdparty/dep/LICENSE.md", ".github/PR.md", "src/x.go")
+	got := selected_paths(select_docs(files))
+	testing.expect(t, slice.equal(got, []string{"README.md", "guide.md"}), "no thirdparty/, no .github/")
+}
+
+@(test)
+docs_folder_excludes_vendored :: proc(t: ^testing.T) {
+	files := tree("docs/intro.rst", "docs/thirdparty/vendor/README.md", "docs/guide.md")
+	got := selected_paths(select_docs(files))
+	testing.expect(t, slice.equal(got, []string{"docs/guide.md", "docs/intro.rst"}), "vendored dir under docs/ dropped")
 }
 
 @(test)

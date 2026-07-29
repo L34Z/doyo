@@ -19,8 +19,10 @@ File :: struct {
 	data: []u8,
 }
 
-// Extensions doyo treats as LLM-readable documentation source (DESIGN §8).
-DOC_EXTS := []string{".md", ".markdown", ".rst", ".txt"}
+// Served documentation formats (DESIGN §8: Markdown and reStructuredText). Plain
+// .txt is deliberately excluded — it is not a served format, and blanket-grabbing
+// it pulls in logs and license dumps. llms.txt manifests are matched by name.
+DOC_EXTS := []string{".md", ".markdown", ".rst"}
 
 // A file counts as documentation when it carries a doc extension, or is a
 // README of any/no extension (READMEs are authoritative even when extensionless).
