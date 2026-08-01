@@ -109,7 +109,10 @@ rungs and stops at the first that works:
 3. A hand-rolled HTML-to-Markdown pass that drops known boilerplate tags
    (`<nav>`, `<header>`, `<footer>`, `<aside>`, `<script>`, `<style>`) and keeps
    the rest. This rung prints `extracted from HTML (heuristic) — verify` per
-   page and leans toward leaving cruft in rather than dropping real content.
+   page and leans toward leaving cruft in rather than dropping real content. It
+   also crawls the tree: from the target page it follows same-section HTML links
+   (those under the target's own directory) and converts each, so a static doc
+   site whose sidebar lists the whole section is pulled in full, not one page.
 
 Fetched pages get a light, line-level cleanup with no format parser. doyo
 removes only provably contentless noise: rST comment blocks (`.. comment`),

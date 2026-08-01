@@ -8,13 +8,17 @@ package doyo
 //
 // ## Changes
 // - 2026-07-28: Initial conservative tokenizer + entity decode + SPA detection.
+// - 2026-08-01: Emit ATX '#' markers for <h1>..<h6> so a downstream chunker
+//   (doma splits on '#' headings) sees the section structure HTML carried in
+//   heading tags, instead of indexing each page as one flat chunk.
 
 import "core:strings"
 
 // Containers whose entire contents are boilerplate and must be dropped.
 BOILERPLATE_TAGS := []string{"script", "style", "nav", "header", "footer", "aside"}
 // Block-level tags whose boundaries become line breaks (structure, not content).
-BLOCK_TAGS := []string{"p", "div", "br", "li", "tr", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "section", "article"}
+// Headings (h1..h6) are handled separately — they become ATX '#' markers.
+BLOCK_TAGS := []string{"p", "div", "br", "li", "tr", "ul", "ol", "section", "article"}
 
 // Convert HTML to lightly-cleaned Markdown-ish text. `spa` is true when the
 // result is effectively empty — the fetched HTML was a JS shell, which no
@@ -54,14 +58,35 @@ html_to_markdown :: proc(data: []u8) -> (md: string, spa: bool) {
 			}
 			continue
 		}
-		if skip == 0 && contains_str(BLOCK_TAGS, name) {
-			strings.write_byte(&b, '\n')
+		if skip == 0 {
+			// <h1>..<h6> → a Markdown ATX heading. Open emits "\n### "; close
+			// emits the trailing newline. The heading text (often wrapped in an
+			// inline <a> anchor, which is stripped) lands right after the marker.
+			if lvl := heading_level(name); lvl > 0 {
+				strings.write_byte(&b, '\n')
+				if !close {
+					for _ in 0 ..< lvl {
+						strings.write_byte(&b, '#')
+					}
+					strings.write_byte(&b, ' ')
+				}
+			} else if contains_str(BLOCK_TAGS, name) {
+				strings.write_byte(&b, '\n')
+			}
 		}
 	}
 
 	text := decode_entities(strings.to_string(b))
 	text = collapse_blank_lines(text)
 	return text, strings.trim_space(text) == ""
+}
+
+// ATX level of an h1..h6 tag name, or 0 when the tag is not a heading.
+heading_level :: proc(name: string) -> int {
+	if len(name) == 2 && name[0] == 'h' && name[1] >= '1' && name[1] <= '6' {
+		return int(name[1] - '0')
+	}
+	return 0
 }
 
 is_name_byte :: proc(c: u8) -> bool {
